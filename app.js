@@ -45,6 +45,8 @@ function sayText(it, full) {
   return it.w.replace(/-/g, '');
 }
 function speak(text, slow) {
+  // в APK-версии озвучивает родной синтез речи Android (WebView не умеет speechSynthesis)
+  if (window.AndroidTTS) { AndroidTTS.speak(text, slow ? 0.6 : P.rate); return; }
   if (!('speechSynthesis' in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
@@ -468,8 +470,8 @@ const SCENE = [
   { id: 'cloud', color: 'white', ru: 'облако', e: '☁️', d: '<path d="M150 78h80a18 18 0 0 0 0-36 26 26 0 0 0-48-10 20 20 0 0 0-32 14 16 16 0 0 0 0 32z"/>' },
   { id: 'sea', color: 'blue', ru: 'море', e: '🌊', d: '<path d="M0 182c20-8 40 8 60 0s40-8 60 0 40 8 60 0 40-8 60 0v78H0z"/>' },
   { id: 'sail', color: 'red', ru: 'парус', e: '⛵', d: '<path d="M112 82v90H58z"/>' },
-  { id: 'boat', color: 'black', ru: 'лодка', e: '🚤', d: '<path d="M40 172h112l-16 22H58z"/>' },
-  { id: 'fish', color: 'orange', ru: 'рыбка', e: '🐟', d: '<path d="M70 228c10-14 34-14 44 0-10 14-34 14-44 0zM70 228l-14-10v20z"/>' },
+  { id: 'boat', color: 'black', ru: 'лодку', e: '🚤', d: '<path d="M40 172h112l-16 22H58z"/>' },
+  { id: 'fish', color: 'orange', ru: 'рыбку', e: '🐟', d: '<path d="M70 228c10-14 34-14 44 0-10 14-34 14-44 0zM70 228l-14-10v20z"/>' },
   { id: 'trunk', color: 'brown', ru: 'ствол пальмы', e: '🌴', d: '<path d="M282 96c6 30 6 60 0 92h16c4-32 2-62-4-92z"/>' },
   { id: 'leaves', color: 'green', ru: 'листья пальмы', e: '🌿', d: '<path d="M290 96c-20-24-52-24-70-8 22-4 44 0 70 8zM290 96c18-26 52-28 70-12-22-2-46 2-70 12zM290 96c-8-28-30-44-50-44 20 12 36 26 50 44zM290 96c10-26 34-40 54-38-20 10-38 22-54 38z"/>' },
   { id: 'flower', color: 'pink', ru: 'цветок', e: '🌸', d: '<circle cx="246" cy="164" r="7"/><circle cx="258" cy="164" r="7"/><circle cx="252" cy="154" r="7"/><circle cx="252" cy="173" r="6"/>' },
@@ -562,20 +564,21 @@ function settingsView() {
         <option value="0.85" ${P.rate == 0.85 ? 'selected' : ''}>Обычно</option>
         <option value="1" ${P.rate == 1 ? 'selected' : ''}>Быстро</option>
       </select></label>
-    <label class="set"><span>Голос</span>
+    ${window.AndroidTTS ? '' : `<label class="set"><span>Голос</span>
       <select id="voice">${vs.length ? vs.map(v => `<option ${enVoice && v.name === enVoice.name ? 'selected' : ''}>${esc(v.name)}</option>`).join('')
-        : '<option>Английских голосов нет</option>'}</select></label>
+        : '<option>Английских голосов нет</option>'}</select></label>`}
     <button class="wide ghost" id="test">🔊 Проверить: Hello, Sasha!</button>
     <label class="set"><span>Звуки в играх</span><input type="checkbox" id="snd" ${P.sound ? 'checked' : ''}></label>
     <div class="note">
       <b>Для родителей.</b> Темы «Из школы» взяты с листков Саши: цвета, числа до 12, семья, фрукты.
       Писать ничего не нужно, все задания на слух и на чтение. Слова, в которых Саша ошибается, чаще попадаются в «Повторим, что знаю».
-      Если голоса нет, на iPhone: Настройки → Универсальный доступ → Устный контент → Голоса → English.
+      Если голоса нет, на Android: Настройки → Специальные возможности → Синтез речи → Google, скачать английский язык. На iPhone: Настройки → Универсальный доступ → Устный контент → Голоса → English.
     </div>
     <button class="wide danger" id="reset">Сбросить прогресс</button>
   </div>`;
   document.getElementById('rate').onchange = e => { P.rate = +e.target.value; save(); speak('Hello, Sasha!'); };
-  document.getElementById('voice').onchange = e => { P.voice = e.target.value; save(); pickVoice(); speak('Hello, Sasha!'); };
+  const vsel = document.getElementById('voice');
+  if (vsel) vsel.onchange = e => { P.voice = e.target.value; save(); pickVoice(); speak('Hello, Sasha!'); };
   document.getElementById('test').onclick = () => speak('Hello, Sasha!');
   document.getElementById('snd').onchange = e => { P.sound = e.target.checked; save(); };
   document.getElementById('reset').onclick = () => {
@@ -586,7 +589,8 @@ function settingsView() {
 
 // ——— маршруты ———
 function route() {
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  if (window.AndroidTTS) AndroidTTS.stop();
+  else if ('speechSynthesis' in window) speechSynthesis.cancel();
   const h = location.hash.replace(/^#\/?/, '').split('?')[0];
   const [a, b, c] = h.split('/');
   if (a === 'topic') topicView(b);
