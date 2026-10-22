@@ -95,6 +95,32 @@ const TOPICS = [
     ]
   },
 
+  {
+    id: 'transport', title: 'Транспорт', en: 'Transport', icon: '🚌', tint: '#D7F3F0', known: true,
+    items: [
+      { w: 'a car', t: 'э ка:', ru: 'автомобиль', e: '🚗' },
+      { w: 'a bus', t: 'э бас', ru: 'автобус', e: '🚌' },
+      { w: 'a tram', t: 'э трэм', ru: 'трамвай', e: '🚋' },
+      { w: 'a trolley-bus', t: 'э тро́либас', ru: 'троллейбус', e: '🚎' },
+      { w: 'a train', t: 'э трэ́ин', ru: 'поезд', e: '🚂' },
+      { w: 'a bicycle', t: 'э ба́йсикл', ru: 'велосипед', e: '🚲' },
+      { w: 'a motorcycle', t: 'э мо́утэсайкл', ru: 'мотоцикл', e: '🏍️' },
+      { w: 'a boat', t: 'э бо́ут', ru: 'лодка', e: '🛶' },
+      { w: 'a ship', t: 'э шип', ru: 'корабль', e: '🚢' },
+      { w: 'a plane', t: 'э плэ́ин', ru: 'самолёт', e: '✈️' },
+      { w: 'a helicopter', t: 'э хе́ликоптэ', ru: 'вертолёт', e: '🚁' },
+      { w: 'a rocket', t: 'э ро́кит', ru: 'ракета', e: '🚀' }
+    ],
+    phrases: [
+      { w: 'Look at a bus.', ru: 'Посмотри на автобус.', e: '🚌' },
+      { w: 'Look at a train.', ru: 'Посмотри на поезд.', e: '🚂' },
+      { w: 'Look at a ship.', ru: 'Посмотри на корабль.', e: '🚢' },
+      { w: 'Look at a plane.', ru: 'Посмотри на самолёт.', e: '✈️' },
+      { w: 'Look at...', ru: 'Посмотри на...', e: '👀' }
+    ],
+    phrasesTitle: 'Стишок'
+  },
+
   // ——— новое, если захочется дальше ———
   {
     id: 'animals', title: 'Животные', en: 'Animals', icon: '🐻', tint: '#FFF1BF',
@@ -112,6 +138,7 @@ const TOPICS = [
       { w: 'a pig', t: 'э пиг', ru: 'свинья', e: '🐷' },
       { w: 'a horse', t: 'э хо:с', ru: 'лошадь', e: '🐴' },
       { w: 'a duck', t: 'э дак', ru: 'утка', e: '🦆' },
+      { w: 'a bird', t: 'э бё:д', ru: 'птица', e: '🐦' },
       { w: 'a fish', t: 'э фиш', ru: 'рыба', e: '🐟' },
       { w: 'a lion', t: 'э ла́йэн', ru: 'лев', e: '🦁' },
       { w: 'a monkey', t: 'э ма́нки', ru: 'обезьяна', e: '🐵' }

@@ -135,7 +135,7 @@ function home() {
 
   <button class="hero" data-go="#/quiz/review/mix">
     <span class="hero-ico">🔁</span>
-    <span><b>Повторим, что знаю</b><small>Цвета, числа, семья и фрукты вперемешку</small></span>
+    <span><b>Повторим, что знаю</b><small>Всё, что проходили в школе, вперемешку</small></span>
     <span class="arrow">›</span>
   </button>
 
@@ -146,6 +146,8 @@ function home() {
   <div class="games">
     <button class="game" data-go="#/paint"><span>🖍️</span><b>Раскраска</b><small>Раскрась картинку по-английски</small></button>
     <button class="game" data-go="#/missing"><span>❓</span><b>Какое число пропущено?</b><small>What number is missing?</small></button>
+    <button class="game" data-go="#/balloons/mix"><span>🎈</span><b>Лопни шарик</b><small>Услышал слово — лопни нужный шарик!</small></button>
+    <button class="game" data-go="#/fly"><span>🚁</span><b>Летает или нет?</b><small>Игра на сообразительность</small></button>
     <button class="game" data-go="#/pairs/mix"><span>🃏</span><b>Мемори</b><small>Найди пары: картинка и слово</small></button>
   </div>
 
@@ -166,6 +168,7 @@ function topicView(id) {
   if (!t) return go('#/');
   const extra = [];
   if (id === 'colors') extra.push(`<button class="mode" data-go="#/paint"><span>🖍️</span><b>Раскраска</b></button>`);
+  if (id === 'transport' || id === 'animals') extra.push(`<button class="mode" data-go="#/fly"><span>🚁</span><b>Летает или нет?</b></button>`);
   if (id === 'numbers') extra.push(`<button class="mode" data-go="#/missing"><span>❓</span><b>Какое число пропущено?</b></button>`);
   $view.innerHTML = `${head(t.icon + ' ' + t.title, '#/')}
   <button class="en-title" data-say="${esc(t.en)}">${esc(t.en)} <span>🔊</span></button>
@@ -174,6 +177,7 @@ function topicView(id) {
     <button class="mode" data-go="#/quiz/${id}/listen"><span>👂</span><b>Послушай и найди</b></button>
     <button class="mode" data-go="#/quiz/${id}/read"><span>📖</span><b>Прочитай и найди</b></button>
     <button class="mode" data-go="#/pairs/${id}"><span>🃏</span><b>Мемори</b></button>
+    <button class="mode" data-go="#/balloons/${id}"><span>🎈</span><b>Лопни шарик</b></button>
     ${extra.join('')}
     ${t.phrases ? `<button class="mode" data-go="#/phrases/${id}"><span>💬</span><b>${t.phrasesTitle || 'Фразы'}</b></button>` : ''}
   </div>
@@ -464,6 +468,129 @@ function missingView(restart) {
   });
 }
 
+// ——— летает или нет (игра на сообразительность с листка про транспорт) ———
+const FLY = {
+  yes: [['transport', 'a plane'], ['transport', 'a helicopter'], ['transport', 'a rocket'], ['animals', 'a bat'], ['animals', 'a duck'], ['animals', 'a bird']],
+  no: [['transport', 'a car'], ['transport', 'a bus'], ['transport', 'a tram'], ['transport', 'a train'], ['transport', 'a bicycle'], ['transport', 'a ship'],
+    ['transport', 'a boat'], ['animals', 'a cat'], ['animals', 'a dog'], ['animals', 'a frog'], ['animals', 'a fish'], ['animals', 'a bear']]
+};
+let F = null;
+function flyView(restart) {
+  if (restart || !F) {
+    const get = ([tid, w], can) => ({ tid, it: byId[tid].items.find(x => x.w === w), can });
+    F = { i: 0, good: 0, list: shuffle([...sample(FLY.yes, 5).map(x => get(x, true)), ...sample(FLY.no, 5).map(x => get(x, false))]) };
+  }
+  if (F.i >= F.list.length) {
+    const g = F.good, st = g >= 9 ? 3 : g >= 6 ? 2 : 1;
+    F = null; sndWin();
+    return finish(st, `Правильно: ${g} из 10`, '#/fly?' + Date.now(), '#/');
+  }
+  const q = F.list[F.i];
+  $view.innerHTML = `${head('Летает или нет?', '#/')}
+  <div class="progress"><i style="width:${F.i * 10}%"></i></div>
+  <button class="card fly-card" id="flysay" style="--tint:${byId[q.tid].tint}">
+    ${pic(q.it, 'xl')}
+    <span class="card-word">${word(q.it)}</span>
+    ${tr(q.it)}
+  </button>
+  <p class="ask">Can it fly? Оно летает?</p>
+  <div class="opts fly-opts">
+    <button class="opt" data-can="1"><span class="fly-ico">🙌</span><b>Летает!</b><small>Yes</small></button>
+    <button class="opt" data-can="0"><span class="fly-ico">🙅</span><b>Не летает</b><small>No</small></button>
+  </div>`;
+  const say = () => speak(sayText(q.it) + '. Can it fly?');
+  document.getElementById('flysay').onclick = say;
+  setTimeout(say, 250);
+  let busy = false;
+  $view.querySelectorAll('[data-can]').forEach(b => b.onclick = () => {
+    if (busy) return;
+    busy = true;
+    const right = (b.dataset.can === '1') === q.can;
+    mark(q.tid, q.it, right);
+    if (right) { b.classList.add('ok'); sndGood(); F.good++; P.stars++; }
+    else {
+      b.classList.add('bad'); sndBad();
+      $view.querySelector(`[data-can="${q.can ? 1 : 0}"]`).classList.add('show');
+    }
+    save();
+    speak(q.can ? 'Yes! It can fly!' : 'No! It can not fly.');
+    setTimeout(() => { F.i++; flyView(); }, right ? 1500 : 2300);
+  });
+}
+
+// ——— лопни шарик: шарики с картинками летят вверх, надо лопнуть названный ———
+const BALLOON_COLORS = ['#FF6B6B', '#4DABF7', '#51CF66', '#FCC419', '#CC5DE8', '#FF922B', '#F783AC', '#20C997'];
+let BL = null;
+function balloonsView(id) {
+  if (id !== 'mix' && !byId[id]) return go('#/');
+  BL = { id, round: 0, good: 0, total: 10, target: null };
+  const back = id === 'mix' ? '#/' : '#/topic/' + id;
+  $view.innerHTML = `${head('Лопни шарик', back)}
+  <div class="progress"><i id="blprog" style="width:0"></i></div>
+  <div class="say-row center">
+    <button class="sayb big" id="blrep">🔊 Ещё раз</button>
+    <button class="sayb slow" id="blslow" aria-label="Медленно">🐢</button>
+  </div>
+  <div class="arena" id="arena"></div>
+  <p class="hint center">Лопни шарик, который я назову!</p>`;
+  document.getElementById('blrep').onclick = () => BL.target && speak(sayText(BL.target.it));
+  document.getElementById('blslow').onclick = () => BL.target && speak(sayText(BL.target.it), true);
+  balloonRound(true);
+}
+function balloonRound(fresh) {
+  if (!BL || !document.getElementById('arena')) return;
+  if (BL.round >= BL.total) {
+    const g = BL.good, st = g >= 9 ? 3 : g >= 6 ? 2 : 1, id = BL.id;
+    BL = null; sndWin();
+    return finish(st, `Лопнуто с первого раза: ${g} из 10`, '#/balloons/' + id + '?' + Date.now(), id === 'mix' ? '#/' : '#/topic/' + id);
+  }
+  if (fresh) {
+    const tid = BL.id === 'mix' ? sample(KNOWN, 1)[0] : BL.id;
+    const it = sample(byId[tid].items, 1)[0];
+    BL.target = { tid, it, missed: false };
+  }
+  const { tid, it } = BL.target;
+  const items = shuffle([it, ...sample(byId[tid].items.filter(x => x !== it), 3)]);
+  const lanes = shuffle([2, 26, 50, 74]);
+  const colors = sample(BALLOON_COLORS, 4);
+  const arena = document.getElementById('arena');
+  document.getElementById('blprog').style.width = BL.round / BL.total * 100 + '%';
+  arena.style.setProperty('--travel', -(arena.clientHeight + 260) + 'px');
+  arena.innerHTML = items.map((x, k) => `<button class="balloon" data-k="${k}" style="left:${lanes[k]}%;--bc:${colors[k]};--dur:${(6.5 + Math.random() * 2.5).toFixed(1)}s;--delay:${(Math.random() * 0.8).toFixed(2)}s">
+    <span class="b-in">${pic(x, 'md')}</span></button>`).join('');
+  setTimeout(() => speak(sayText(it)), 200);
+  let done = false;
+  arena.querySelectorAll('.balloon').forEach(b => {
+    const x = items[+b.dataset.k];
+    b.onclick = () => {
+      if (done || b.classList.contains('popped')) return;
+      if (x === it) {
+        done = true;
+        b.classList.add('popped'); sndGood();
+        b.insertAdjacentHTML('beforeend', '<span class="boom">💥</span>');
+        if (!BL.target.missed) { BL.good++; P.stars++; }
+        mark(tid, it, !BL.target.missed); save();
+        speak(sayText(it, true));
+        BL.round++;
+        setTimeout(() => balloonRound(true), 1100);
+      } else {
+        b.classList.remove('wobble'); void b.offsetWidth; b.classList.add('wobble');
+        sndBad();
+        if (!BL.target.missed) { BL.target.missed = true; mark(tid, it, false); save(); }
+        setTimeout(() => speak(sayText(it)), 250);
+      }
+    };
+    // нужный шарик улетел — запускаем ещё раз с тем же словом
+    if (x === it) b.addEventListener('animationend', e => {
+      if (e.animationName !== 'rise' || done) return;
+      done = true;
+      BL.target.missed = true;
+      speak('Oops!');
+      setTimeout(() => balloonRound(false), 700);
+    });
+  });
+}
+
 // ——— раскраска ———
 const SCENE = [
   { id: 'sun', color: 'yellow', ru: 'солнце', e: '☀️', d: '<circle cx="62" cy="58" r="30"/>' },
@@ -600,6 +727,8 @@ function route() {
   else if (a === 'pairs') pairsView(b);
   else if (a === 'missing') missingView(true);
   else if (a === 'paint') paintView();
+  else if (a === 'fly') flyView(true);
+  else if (a === 'balloons') balloonsView(b || 'mix');
   else if (a === 'stickers') stickersView();
   else if (a === 'settings') settingsView();
   else home();

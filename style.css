@@ -188,6 +188,45 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--accent); o
 @keyframes pop { 50% { transform: scale(1.06); } }
 @keyframes shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
 
+/* летает или нет */
+.fly-card { margin-bottom: 4px; }
+.fly-card .pic.xl { width: 150px; height: 150px; }
+.fly-card .pic.emo.xl { font-size: 110px; }
+.fly-opts .opt { min-height: 130px; }
+.fly-ico { font-size: 46px; line-height: 1; }
+.fly-opts small { color: var(--muted); font-size: 15px; }
+
+/* лопни шарик */
+.arena {
+  position: relative; height: 58vh; min-height: 360px; max-height: 560px; overflow: hidden;
+  border-radius: var(--radius); background: linear-gradient(#BFE3FF, #EEF7FF 80%); box-shadow: var(--shadow);
+}
+.balloon {
+  position: absolute; bottom: -170px; width: 24%; aspect-ratio: .8; padding: 0;
+  animation: rise var(--dur) linear var(--delay) forwards;
+}
+.balloon::after { content: ''; position: absolute; top: 100%; left: 50%; width: 2px; height: 60px; background: rgba(42, 39, 51, .3); }
+.b-in {
+  display: grid; place-items: center; width: 100%; height: 100%;
+  border-radius: 50% 50% 47% 47% / 56% 56% 44% 44%;
+  background: radial-gradient(circle at 30% 26%, rgba(255, 255, 255, .6) 0 9%, transparent 10%), var(--bc);
+  box-shadow: inset -6px -10px 0 rgba(0, 0, 0, .12);
+}
+.b-in .pic { background: rgba(255, 255, 255, .85); border-radius: 50%; width: 72%; height: auto; aspect-ratio: 1; }
+.b-in .pic.emo.md { font-size: 34px; }
+.b-in .pic.num.md b, .b-in .pic.letter.md b { font-size: 30px; }
+.b-in .pic.num .dots, .b-in .pic.letter small { display: none; }
+.b-in .pic.svg svg { width: 80%; height: 80%; }
+.b-in .blob { width: 70%; height: 70%; }
+@keyframes rise { to { transform: translateY(var(--travel)); } }
+.balloon.wobble .b-in { animation: shake .4s; }
+.balloon.popped { animation-play-state: paused; }
+.balloon.popped::after { display: none; }
+.balloon.popped .b-in { animation: popb .3s forwards; }
+@keyframes popb { to { transform: scale(1.6); opacity: 0; } }
+.boom { position: absolute; inset: 0; display: grid; place-items: center; font-size: 60px; animation: pop .4s; pointer-events: none; }
+.hint.center { text-align: center; margin-top: 10px; }
+
 /* результат */
 .result { text-align: center; padding-top: 10px; }
 .big-stars { font-size: 66px; color: #E3D8C3; letter-spacing: 6px; }
