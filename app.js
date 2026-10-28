@@ -146,6 +146,7 @@ function home() {
   <div class="games">
     <button class="game" data-go="#/paint"><span>🖍️</span><b>Раскраска</b><small>Раскрась картинку по-английски</small></button>
     <button class="game" data-go="#/missing"><span>❓</span><b>Какое число пропущено?</b><small>What number is missing?</small></button>
+    <button class="game" data-go="#/move"><span>🤸</span><b>Зарядка</b><small>Слушай команду и делай!</small></button>
     <button class="game" data-go="#/balloons/mix"><span>🎈</span><b>Лопни шарик</b><small>Услышал слово — лопни нужный шарик!</small></button>
     <button class="game" data-go="#/fly"><span>🚁</span><b>Летает или нет?</b><small>Игра на сообразительность</small></button>
     <button class="game" data-go="#/pairs/mix"><span>🃏</span><b>Мемори</b><small>Найди пары: картинка и слово</small></button>
@@ -169,6 +170,7 @@ function topicView(id) {
   const extra = [];
   if (id === 'colors') extra.push(`<button class="mode" data-go="#/paint"><span>🖍️</span><b>Раскраска</b></button>`);
   if (id === 'transport' || id === 'animals') extra.push(`<button class="mode" data-go="#/fly"><span>🚁</span><b>Летает или нет?</b></button>`);
+  if (id === 'commands') extra.push(`<button class="mode" data-go="#/move"><span>🤸</span><b>Зарядка</b></button>`);
   if (id === 'numbers') extra.push(`<button class="mode" data-go="#/missing"><span>❓</span><b>Какое число пропущено?</b></button>`);
   $view.innerHTML = `${head(t.icon + ' ' + t.title, '#/')}
   <button class="en-title" data-say="${esc(t.en)}">${esc(t.en)} <span>🔊</span></button>
@@ -591,6 +593,54 @@ function balloonRound(fresh) {
   });
 }
 
+// ——— зарядка: приложение называет команду, Саша выполняет движение ———
+let MV = null, mvTimer = null;
+const MOVE_SECONDS = 6;
+function moveView() {
+  clearInterval(mvTimer);
+  MV = { list: sample(byId.commands.items, 8), i: 0 };
+  moveStep();
+}
+function moveStep() {
+  clearInterval(mvTimer);
+  if (MV.i >= MV.list.length) {
+    P.stars += 3; save(); sndWin();
+    return finish(3, 'Ты сделал все 8 команд! Звёзд: 3', '#/move?' + Date.now(), '#/');
+  }
+  const it = MV.list[MV.i];
+  $view.innerHTML = `${head('Зарядка', '#/')}
+  <div class="progress"><i style="width:${MV.i / MV.list.length * 100}%"></i></div>
+  <p class="ask">Слушай команду и делай!</p>
+  <button class="card move-card" id="mvsay" style="--tint:${byId.commands.tint}">
+    <span class="pic emo xl move-ico">${it.e}</span>
+    <span class="card-word">${esc(it.w)}</span>
+    ${tr(it)}
+    <span class="card-ru">${esc(it.ru)}</span>
+  </button>
+  <div class="move-timer"><span class="ring" id="ring"><b id="sec">${MOVE_SECONDS}</b></span></div>
+  <button class="wide" id="mvnext">Сделал! Дальше ▶</button>`;
+  const cmd = it.w.replace('!', '');
+  const say = () => speak(`${cmd}! ${cmd}! ${cmd}!`);
+  document.getElementById('mvsay').onclick = say;
+  setTimeout(say, 250);
+  let left = MOVE_SECONDS * 10;
+  const ring = document.getElementById('ring'), sec = document.getElementById('sec');
+  mvTimer = setInterval(() => {
+    left--;
+    ring.style.setProperty('--p', (1 - left / (MOVE_SECONDS * 10)) * 360 + 'deg');
+    sec.textContent = Math.ceil(left / 10);
+    if (left <= 0) next();
+  }, 100);
+  const next = () => {
+    clearInterval(mvTimer);
+    mark('commands', it, true); save();
+    sndGood();
+    MV.i++;
+    setTimeout(moveStep, 500);
+  };
+  document.getElementById('mvnext').onclick = next;
+}
+
 // ——— раскраска ———
 const SCENE = [
   { id: 'sun', color: 'yellow', ru: 'солнце', e: '☀️', d: '<circle cx="62" cy="58" r="30"/>' },
@@ -716,6 +766,7 @@ function settingsView() {
 
 // ——— маршруты ———
 function route() {
+  clearInterval(mvTimer);
   if (window.AndroidTTS) AndroidTTS.stop();
   else if ('speechSynthesis' in window) speechSynthesis.cancel();
   const h = location.hash.replace(/^#\/?/, '').split('?')[0];
@@ -728,6 +779,7 @@ function route() {
   else if (a === 'missing') missingView(true);
   else if (a === 'paint') paintView();
   else if (a === 'fly') flyView(true);
+  else if (a === 'move') moveView();
   else if (a === 'balloons') balloonsView(b || 'mix');
   else if (a === 'stickers') stickersView();
   else if (a === 'settings') settingsView();
